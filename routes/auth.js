@@ -7,9 +7,12 @@ const jwt = require('jsonwebtoken')
 
 router.post('/register', async(req,res)=>{
     console.log(req.body);
-    const {firstname,lastname,email,password,phno} = req.body
+    let {firstname,lastname,email,password,phno} = req.body
+    password  = await bcrypt.hash(password, 10)
+
 
     try {
+        console.log("in herre register");
         let user = await User.findOne({email})
         let ph = await User.findOne({phno})
         if(user){
@@ -19,7 +22,6 @@ router.post('/register', async(req,res)=>{
             return res.status(400).json({message:"Phone Nnumber already registered"})
         }
 
-        // const hashedPassword = await bcrypt.hash(password, 10)
 
         user = new User({firstname,lastname,email,password,phno})
         await user.save()
@@ -30,6 +32,7 @@ router.post('/register', async(req,res)=>{
 
     }
     catch(err) {
+        console.log("register error",err);
         res.status(500).json({message:"Server error"})
     }
 })
@@ -39,19 +42,23 @@ router.post('/login', async(req,res)=>{
     console.log(req.body);
     const {email,password} = req.body
 
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+
     try {
+
+        console.log("in here password");
         const user = await User.findOne({email})
 
         if(!user){
             return res.status(400).json({message:"Invalid Credentials"})
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10)
 
         console.log("userpassword",user.password);
         console.log("current password",password,hashedPassword);
 
-        const passmatch = password == user.password
+        const passmatch = bcrypt.compare(user.password,hashedPassword)
         console.log("passmatch",passmatch);
         if(!passmatch){
             return res.status(400).json({message:"Invalid Credentials"})
